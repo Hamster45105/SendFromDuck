@@ -1,0 +1,43 @@
+name: Release New Version
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Enter new version number (Without the "v" prefix)'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          ref: 'main'
+
+      - name: Get version number
+        run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+
+      - name: Update version file
+        run: echo "$VERSION" > latest_version.txt
+
+      - name: Commit changes
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add latest_version.txt
+          git commit -m "Bump version to $VERSION"
+          git push
+
+      - name: Create new release and tag
+        run: |
+          gh release create v$VERSION --title "Version $VERSION" --notes "Release notes coming soon" --target main
+        env:
+          GH_TOKEN: ${{ github.token }}
+      
+      - name: Trigger release workflow
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          event-type: trigger-pages-deploy
