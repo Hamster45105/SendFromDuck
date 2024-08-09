@@ -54,18 +54,6 @@
                     </div>
                 </div>
 
-                <div id="starPopup" class="star-popup">
-                    <div class="star-popup-content">
-                        <h2 class="star-popup-title">Give the project a 🌟</h2>
-                        <p class="star-popup-text">If you like this project, please consider giving it a star on GitHub.
-                            This will help to support the development of the project!</p>
-                        <button class="star-popup-button"
-                            onclick="window.open('https://github.com/Hamster45105/SendFromDuck', '_blank'); document.getElementById('starPopup').style.display = 'none';">Give
-                            it a star! 🤩</button>
-                    </div>
-                    <button class="star-popup-close"
-                        onclick="document.getElementById('starPopup').style.display = 'none';">Close</button>
-                </div>
             </div>
             <div id="loginLink" style="display: none;">
                 <label>Your special login URL:</label>
@@ -225,15 +213,7 @@
                 return await response.json();
             }
 
-            function showStarPopup() {
-                if (!localStorage.getItem("popupShown")) {
-                    document.getElementById("starPopup").style.display = "block";
-                    localStorage.setItem("popupShown", true);
-                }
-            }
-
             function pageLoad() {
-                showStarPopup();
                 document.getElementById("textbox1").value = "";
                 document.getElementById("textbox2").value = "";
 
