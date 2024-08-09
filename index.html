@@ -105,64 +105,40 @@
             let errorTextbox;
 
             function combineText() {
-                var textbox1Value = document.getElementById("textbox1").value;
-                var textbox2Value = document.getElementById("textbox2").value;
-                var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                var duckEmailRegex = /^[^\s@]+@duck\.com$/;
+                const textbox1 = document.getElementById("textbox1");
+                const textbox2 = document.getElementById("textbox2");
+                const combinedTextElement = document.getElementById("combinedText");
+                const copyButton = document.getElementById("copyButton");
+                const mailButton = document.getElementById("mailButton");
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const duckEmailRegex = /^[^\s@]+@duck\.com$/;
 
-                const textareaElement = document.getElementById("textbox1");
-                var lines = textareaElement.value.split("\n");
+                const lines = textbox1.value.split("\n").filter(line => line.trim() !== "");
+                textbox1.value = lines.join("\n");
 
-                const nonEmptyLines = lines.filter(line => line.trim() !== "");
-                const newValue = nonEmptyLines.join("\n");
-                textareaElement.value = newValue;
-                var lines = textareaElement.value.split("\n");
-
-
-                var results = [];
-
-                for (let i = 0; i < lines.length; i++) {
-                    if (!emailRegex.test(lines[i])) {
-                        openErrorPopup(`"${lines[i]}" (on line ${i + 1}) is not a valid email address`);
-                        errorTextbox = "textbox1";
-                        return false;
-                    }
-                    var textbox1Parts = lines[i].split("@");
-                    var combinedText = textbox1Parts[0] + "_at_" + textbox1Parts[1] + "_" + textbox2Value;
-                    results.push(combinedText);
-                }
-
-                if (!duckEmailRegex.test(textbox2Value)) {
+                if (!duckEmailRegex.test(textbox2.value)) {
                     openErrorPopup("Please enter a valid duck address!");
                     errorTextbox = "textbox2";
                     return false;
                 }
 
+                const results = lines.map((line, index) => {
+                    if (!emailRegex.test(line)) {
+                        openErrorPopup(`"${line}" (on line ${index + 1}) is not a valid email address`);
+                        errorTextbox = "textbox1";
+                        return false;
+                    }
+                    const [localPart, domain] = line.split("@");
+                    return `${localPart}_at_${domain}_${textbox2.value}`;
+                });
+
                 result = results.join(",");
-
-
                 copyButton.style.backgroundColor = "#007bff";
                 copyButton.textContent = "Copy to Clipboard";
 
-                if (lines.length === 1) {
-                    document.getElementById("combinedText").innerHTML = result;
-                } else {
-                    var resultLines = result.split(",");
-                    var resultNewText = resultLines.join("\n");
-                    document.getElementById("combinedText").innerHTML = resultNewText;
-                }
-
-                if (!duckEmailRegex.test(textbox2Value)) {
-                    openErrorPopup("Please enter a valid duck address!");
-                    return false;
-                }
-                var textbox1Parts = textbox1Value.split("@");
-                var combinedText = textbox1Parts[0] + "_at_" + textbox1Parts[1] + "_" + textbox2Value;
-                copyButton.style.backgroundColor = "#007bff";
-                copyButton.textContent = "Copy to Clipboard";
-                document.getElementById("combinedText").innerHTML = combinedText;
-                document.getElementById("copyButton").removeAttribute("hidden");
-                document.getElementById("mailButton").removeAttribute("hidden");
+                combinedTextElement.innerHTML = lines.length === 1 ? result : result.split(",").join("\n");
+                copyButton.removeAttribute("hidden");
+                mailButton.removeAttribute("hidden");
                 document.getElementById("loginLink").style.display = "none";
             }
 
@@ -178,14 +154,13 @@
             }
 
             function sendEmail() {
-                const mailtoLink = `mailto:${result}`;
-                window.location.href = mailtoLink;
+                window.location.href = `mailto:${result}`;
             }
 
             function openPopup() {
                 document.getElementById("popupInput").value = localStorage.getItem("apiKey");
                 document.getElementById("popup").style.display = "block";
-                popupInput.focus();
+                document.getElementById("popupInput").focus();
             }
 
             function openErrorPopup(errorMessage) {
@@ -199,52 +174,46 @@
             }
 
             async function closePopup() {
-                var emailAddresses;
-                var duckAddress;
-                const cookieValue = localStorage.getItem("loginAddress");
-                const generatedKey = localStorage.getItem("loginAddressKey");
                 const apiKey = document.getElementById("popupInput").value;
-                const button = document.getElementById("generateButton")
-
+                const button = document.getElementById("generateButton");
                 button.textContent = "Generating...";
                 button.disabled = true;
                 button.style.backgroundColor = "#808080";
 
-                if (cookieValue !== null && generatedKey == apiKey) {
+                let emailAddresses;
+                const cookieValue = localStorage.getItem("loginAddress");
+                const generatedKey = localStorage.getItem("loginAddressKey");
+
+                if (cookieValue && generatedKey === apiKey) {
                     emailAddresses = cookieValue;
                     localStorage.removeItem("loginAddress");
-                    duckAddress = emailAddresses + "@duck.com";
                 } else {
                     emailAddresses = await postEmailAddresses(apiKey);
-                    duckAddress = emailAddresses.address + "@duck.com";
                 }
 
+                const duckAddress = `${emailAddresses}@duck.com`;
                 document.getElementById("textbox2").value = duckAddress;
                 localStorage.setItem("apiKey", apiKey);
                 button.textContent = "Generate";
                 button.disabled = false;
                 button.style.backgroundColor = "#007bff";
                 document.getElementById("popup").style.display = "none";
-
-                document.getElementById("loginUrlDisplay").value = window.location.origin + "/auth.html?key=" + apiKey;
+                document.getElementById("loginUrlDisplay").value = `${window.location.origin}/auth.html?key=${apiKey}`;
                 document.getElementById("loginLink").style.display = "block";
                 document.getElementById("copyLoginButton").style.backgroundColor = "#4CAF50";
                 document.getElementById("copyLoginButton").textContent = "Copy";
-
             }
+
             async function postEmailAddresses(apiKey) {
                 const url = "/api/generate_address";
                 const button = document.getElementById("generateButton");
 
-                const requestInit = {
+                const response = await fetch(url, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ apiKey: apiKey })
-                };
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ apiKey })
+                });
 
-                const response = await fetch(url, requestInit);
                 if (response.status === 401) {
                     openErrorPopup("Invalid DuckDuckGo API Key!");
                     button.textContent = "Generate";
@@ -252,56 +221,48 @@
                     button.style.backgroundColor = "#008cba";
                     return null;
                 }
-                const json = await response.json();
-                return json;
+
+                return await response.json();
             }
+
             function showStarPopup() {
                 if (!localStorage.getItem("popupShown")) {
                     document.getElementById("starPopup").style.display = "block";
                     localStorage.setItem("popupShown", true);
                 }
             }
+
             function pageLoad() {
                 showStarPopup();
                 document.getElementById("textbox1").value = "";
                 document.getElementById("textbox2").value = "";
 
-
                 const urlParams = new URLSearchParams(window.location.search);
-                const resizeValue = urlParams.get('resize');
-                const imported = urlParams.get('imported');
-
-                if (resizeValue === 'true') {
-                    textbox1.style.resize = 'vertical';
+                if (urlParams.get('resize') === 'true') {
+                    document.getElementById("textbox1").style.resize = 'vertical';
                 }
-                if (imported === 'true') {
+                if (urlParams.get('imported') === 'true') {
                     const importBanner = document.getElementById('importBanner');
                     importBanner.style.display = 'flex';
                     importBanner.style.opacity = '1';
-
-                    // Remove 'imported' parameter from the URL
                     urlParams.delete('imported');
                     window.history.replaceState({}, '', `${location.pathname}?${urlParams}`);
-
-                    // Hide the banner after 10 seconds
-                    setTimeout(function () {
-                        importBanner.style.opacity = '0';
-                    }, 10000);
+                    setTimeout(() => importBanner.style.opacity = '0', 10000);
                 }
 
-                var urlField = document.getElementById("loginUrlDisplay");
-                var copyLoginButton = document.getElementById("copyLoginButton");
+                const urlField = document.getElementById("loginUrlDisplay");
+                const copyLoginButton = document.getElementById("copyLoginButton");
 
-                copyLoginButton.onclick = function () {
+                copyLoginButton.onclick = () => {
                     urlField.select();
                     document.execCommand("copy");
                     copyLoginButton.style.backgroundColor = "#6fc134";
                     copyLoginButton.textContent = "Copied!";
                 }
             }
+
             function closeErrorPopup() {
                 document.getElementById("errorPopup").style.display = "none";
-                // check if popup is open
                 if (document.getElementById("popup").style.display === "block") {
                     document.getElementById("popupInput").focus();
                 } else {
@@ -309,12 +270,15 @@
                 }
                 decreaseTextAreaSize();
             }
+
             function increaseTextAreaSize() {
                 document.getElementById("textbox1").rows += 1;
             }
+
             function decreaseTextAreaSize() {
-                var numRows = document.getElementById("textbox1").rows;
-                var newNumLines = document.getElementById("textbox1").value.split("\n").length;
+                const textbox1 = document.getElementById("textbox1");
+                const numRows = textbox1.rows;
+                const newNumLines = textbox1.value.split("\n").length;
                 if (newNumLines < numRows) {
                     textbox1.rows = newNumLines;
                 }
@@ -322,32 +286,22 @@
 
             window.addEventListener("load", pageLoad);
 
-            // Keyboard shortcuts
             document.addEventListener("keydown", function (event) {
                 if (event.keyCode === 13 && !event.ctrlKey && !event.altKey && !event.shiftKey) {
-                    if (errorPopup.style.display === "block") {
+                    if (document.getElementById("errorPopup").style.display === "block") {
                         event.preventDefault();
-                        errorPopup.style.display = "none";
-                        setTimeout(function () {
-                            closeErrorPopup();
-                        }, 0);
-                    }
-                    if (document.activeElement === document.getElementById("popupInput")) {
+                        closeErrorPopup();
+                    } else if (document.activeElement === document.getElementById("popupInput")) {
                         closePopup();
-                    }
-                    if (document.activeElement === document.getElementById("textbox2")) {
+                    } else if (document.activeElement === document.getElementById("textbox2")) {
                         combineText();
-                    }
-                    if (document.activeElement === document.getElementById("textbox1")) {
-                        document.getElementById("textbox1").rows += 1;
+                    } else if (document.activeElement === document.getElementById("textbox1")) {
+                        increaseTextAreaSize();
                     }
                 }
             });
 
-            textbox1.addEventListener("input", function () {
-                decreaseTextAreaSize();
-            });
-
+            document.getElementById("textbox1").addEventListener("input", decreaseTextAreaSize);
         </script>
         <script type="text/javascript"
             src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
