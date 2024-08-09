@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<html>
+
+<head>
+    <title>Send From Duck | Send emails FROM your duck addresses</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./styles/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Send From Duck 🦆</h1>
+        <h2><i>Send emails from your duck addresses</i></h2>
+        <h3>Did you know that you can send FROM duck addresses? Use this tool to help you do it!</h3>
+
+        <div style="display: flex; flex-direction: column;">
+            <label for="textbox1">Address/es to send TO (one per line):</label>
+            <textarea id="textbox1" name="textbox1" placeholder="john@example.com" rows="1"></textarea>
+            <label for="textbox2">Address to send FROM:</label>
+            <div style="display: flex; flex-direction: row; align-items: center;">
+                <div
+                    style="display: flex; flex-direction: row; align-items: center; flex: 1; justify-content: flex-end;">
+                    <input type="email" id="textbox2" name="textbox2" placeholder="samantha@duck.com"
+                        style="flex-grow: 1;">
+                    <button onclick="openPopup()"
+                        style="margin-left: auto; margin-top: -35px; padding: 5px 5px; height: 30px; background-color: transparent;">
+                        <img src="generate_icon.png" alt="Generate address" style="height: 175%; width: auto;">
+                    </button>
+                </div>
+
+                <div id="popup">
+                    <div>
+                        <h2>Generate Private Duck Address</h2>
+                        <p>Enter your DuckDuckGo API key here. <a
+                                href='https://github.com/Hamster45105/SendFromDuck/wiki/Get-DDG-API-Key'
+                                target='_blank'>Click here to find out how to get it.</a></p>
+                        <input type="password" id="popupInput">
+                        <div>
+                            <button id="generateButton" onclick="closePopup()">Generate</button>
+                            <button onclick="document.getElementById('popup').style.display = 'none';">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="errorPopup">
+                    <div>
+                        <h2>Error</h2>
+                        <p id="error-message">An error occurred</p>
+                        <button onclick="closeErrorPopup()">Dismiss</button>
+                    </div>
+                </div>
+
+                <div id="starPopup" class="star-popup">
+                    <div class="star-popup-content">
+                        <h2 class="star-popup-title">Give the project a 🌟</h2>
+                        <p class="star-popup-text">If you like this project, please consider giving it a star on GitHub.
+                            This will help to support the development of the project!</p>
+                        <button class="star-popup-button"
+                            onclick="window.open('https://github.com/Hamster45105/SendFromDuck', '_blank'); document.getElementById('starPopup').style.display = 'none';">Give
+                            it a star! 🤩</button>
+                    </div>
+                    <button class="star-popup-close"
+                        onclick="document.getElementById('starPopup').style.display = 'none';">Close</button>
+                </div>
+            </div>
+            <div id="loginLink" style="display: none;">
+                <label>Your special login URL:</label>
+                <input id="loginUrlDisplay" type="text" id="url" value="" readonly>
+                <div style="display: flex; align-items: center;">
+                    <p style="color: #0074cc; text-decoration: underline; cursor: pointer; margin-right: 20px;">
+                        <a href="https://github.com/Hamster45105/SendFromDuck/wiki/Functions#special-login-url"
+                            target='_blank'> Find out how this works</a>
+                    </p>
+                    <button id="copyLoginButton">Copy</button>
+                </div>
+            </div>
+
+            <button onclick="combineText()">Create Address!</button>
+
+
+            <div style="display: flex; flex-direction: column; align-items: center;" hidden>
+                <p id="combinedText" style="font-size: 24px; font-weight: bold; margin-top: 20px; text-align: center;">
+                </p>
+            </div>
+            <div style="display: flex; justify-content: center;">
+                <button id="copyButton" onclick="copyToClipboard()"
+                    style="margin-top: 20px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; text-align: center;"
+                    hidden>Copy to Clipboard</button>
+                <button id="mailButton" onclick="sendEmail()"
+                    style="margin-top: 20px; margin-left: 10px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; text-align: center;"
+                    hidden>Open in Mail</button>
+            </div>
+            <div id="importBanner"
+                style="opacity: 0; transition: opacity 0.5s; position: fixed; bottom: 20px; right: 20px; background-color: #44c767; padding: 10px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; box-shadow: 0px 2px 15px rgba(0,0,0,0.1); border-radius: 15px;">
+                <p style="margin: 0; font-size: 18px; color: #fff; font-weight: 500;">Your API key has been imported
+                    successfully!</p>
+            </div>
+        </div>
+        <script>
+            let result;
+            let errorTextbox;
+
+            function combineText() {
+                var textbox1Value = document.getElementById("textbox1").value;
+                var textbox2Value = document.getElementById("textbox2").value;
+                var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                var duckEmailRegex = /^[^\s@]+@duck\.com$/;
+
+                const textareaElement = document.getElementById("textbox1");
+                var lines = textareaElement.value.split("\n");
+
+                const nonEmptyLines = lines.filter(line => line.trim() !== "");
+                const newValue = nonEmptyLines.join("\n");
+                textareaElement.value = newValue;
+                var lines = textareaElement.value.split("\n");
+
+
+                var results = [];
+
+                for (let i = 0; i < lines.length; i++) {
+                    if (!emailRegex.test(lines[i])) {
+                        openErrorPopup(`"${lines[i]}" (on line ${i + 1}) is not a valid email address`);
+                        errorTextbox = "textbox1";
+                        return false;
+                    }
+                    var textbox1Parts = lines[i].split("@");
+                    var combinedText = textbox1Parts[0] + "_at_" + textbox1Parts[1] + "_" + textbox2Value;
+                    results.push(combinedText);
+                }
+
+                if (!duckEmailRegex.test(textbox2Value)) {
+                    openErrorPopup("Please enter a valid duck address!");
+                    errorTextbox = "textbox2";
+                    return false;
+                }
+
+                result = results.join(",");
+
+
+                copyButton.style.backgroundColor = "#007bff";
+                copyButton.textContent = "Copy to Clipboard";
+
+                if (lines.length === 1) {
+                    document.getElementById("combinedText").innerHTML = result;
+                } else {
+                    var resultLines = result.split(",");
+                    var resultNewText = resultLines.join("\n");
+                    document.getElementById("combinedText").innerHTML = resultNewText;
+                }
+
+                if (!duckEmailRegex.test(textbox2Value)) {
+                    openErrorPopup("Please enter a valid duck address!");
+                    return false;
+                }
+                var textbox1Parts = textbox1Value.split("@");
+                var combinedText = textbox1Parts[0] + "_at_" + textbox1Parts[1] + "_" + textbox2Value;
+                copyButton.style.backgroundColor = "#007bff";
+                copyButton.textContent = "Copy to Clipboard";
+                document.getElementById("combinedText").innerHTML = combinedText;
+                document.getElementById("copyButton").removeAttribute("hidden");
+                document.getElementById("mailButton").removeAttribute("hidden");
+                document.getElementById("loginLink").style.display = "none";
+            }
+
+            function copyToClipboard() {
+                const tempElement = document.createElement("textarea");
+                tempElement.value = result;
+                document.body.appendChild(tempElement);
+                tempElement.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempElement);
+                copyButton.style.backgroundColor = "#6fc134";
+                copyButton.textContent = "Copied!";
+            }
+
+            function sendEmail() {
+                const mailtoLink = `mailto:${result}`;
+                window.location.href = mailtoLink;
+            }
+
+            function openPopup() {
+                document.getElementById("popupInput").value = localStorage.getItem("apiKey");
+                document.getElementById("popup").style.display = "block";
+                popupInput.focus();
+            }
+
+            function openErrorPopup(errorMessage) {
+                document.getElementById("combinedText").innerHTML = "";
+                document.getElementById("textbox2").blur();
+                document.getElementById("copyButton").setAttribute("hidden", true);
+                document.getElementById("mailButton").setAttribute("hidden", true);
+                document.getElementById("error-message").innerHTML = errorMessage;
+                document.getElementById("errorPopup").style.display = "block";
+                document.getElementById("popupInput").blur();
+            }
+
+            async function closePopup() {
+                var emailAddresses;
+                var duckAddress;
+                const cookieValue = localStorage.getItem("loginAddress");
+                const generatedKey = localStorage.getItem("loginAddressKey");
+                const apiKey = document.getElementById("popupInput").value;
+                const button = document.getElementById("generateButton")
+
+                button.textContent = "Generating...";
+                button.disabled = true;
+                button.style.backgroundColor = "#808080";
+
+                if (cookieValue !== null && generatedKey == apiKey) {
+                    emailAddresses = cookieValue;
+                    localStorage.removeItem("loginAddress");
+                    duckAddress = emailAddresses + "@duck.com";
+                } else {
+                    emailAddresses = await postEmailAddresses(apiKey);
+                    duckAddress = emailAddresses.address + "@duck.com";
+                }
+
+                document.getElementById("textbox2").value = duckAddress;
+                localStorage.setItem("apiKey", apiKey);
+                button.textContent = "Generate";
+                button.disabled = false;
+                button.style.backgroundColor = "#007bff";
+                document.getElementById("popup").style.display = "none";
+
+                document.getElementById("loginUrlDisplay").value = window.location.origin + "/auth.html?key=" + apiKey;
+                document.getElementById("loginLink").style.display = "block";
+                document.getElementById("copyLoginButton").style.backgroundColor = "#4CAF50";
+                document.getElementById("copyLoginButton").textContent = "Copy";
+
+            }
+            async function postEmailAddresses(apiKey) {
+                const url = "/api/generate_address";
+                const button = document.getElementById("generateButton");
+
+                const requestInit = {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ apiKey: apiKey })
+                };
+
+                const response = await fetch(url, requestInit);
+                if (response.status === 401) {
+                    openErrorPopup("Invalid DuckDuckGo API Key!");
+                    button.textContent = "Generate";
+                    button.disabled = false;
+                    button.style.backgroundColor = "#008cba";
+                    return null;
+                }
+                const json = await response.json();
+                return json;
+            }
+            function showStarPopup() {
+                if (!localStorage.getItem("popupShown")) {
+                    document.getElementById("starPopup").style.display = "block";
+                    localStorage.setItem("popupShown", true);
+                }
+            }
+            function pageLoad() {
+                showStarPopup();
+                document.getElementById("textbox1").value = "";
+                document.getElementById("textbox2").value = "";
+
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const resizeValue = urlParams.get('resize');
+                const imported = urlParams.get('imported');
+
+                if (resizeValue === 'true') {
+                    textbox1.style.resize = 'vertical';
+                }
+                if (imported === 'true') {
+                    const importBanner = document.getElementById('importBanner');
+                    importBanner.style.display = 'flex';
+                    importBanner.style.opacity = '1';
+
+                    // Remove 'imported' parameter from the URL
+                    urlParams.delete('imported');
+                    window.history.replaceState({}, '', `${location.pathname}?${urlParams}`);
+
+                    // Hide the banner after 10 seconds
+                    setTimeout(function () {
+                        importBanner.style.opacity = '0';
+                    }, 10000);
+                }
+
+                var urlField = document.getElementById("loginUrlDisplay");
+                var copyLoginButton = document.getElementById("copyLoginButton");
+
+                copyLoginButton.onclick = function () {
+                    urlField.select();
+                    document.execCommand("copy");
+                    copyLoginButton.style.backgroundColor = "#6fc134";
+                    copyLoginButton.textContent = "Copied!";
+                }
+            }
+            function closeErrorPopup() {
+                document.getElementById("errorPopup").style.display = "none";
+                // check if popup is open
+                if (document.getElementById("popup").style.display === "block") {
+                    document.getElementById("popupInput").focus();
+                } else {
+                    document.getElementById(errorTextbox).focus();
+                }
+                decreaseTextAreaSize();
+            }
+            function increaseTextAreaSize() {
+                document.getElementById("textbox1").rows += 1;
+            }
+            function decreaseTextAreaSize() {
+                var numRows = document.getElementById("textbox1").rows;
+                var newNumLines = document.getElementById("textbox1").value.split("\n").length;
+                if (newNumLines < numRows) {
+                    textbox1.rows = newNumLines;
+                }
+            }
+
+            window.addEventListener("load", pageLoad);
+
+            // Keyboard shortcuts
+            document.addEventListener("keydown", function (event) {
+                if (event.keyCode === 13 && !event.ctrlKey && !event.altKey && !event.shiftKey) {
+                    if (errorPopup.style.display === "block") {
+                        event.preventDefault();
+                        errorPopup.style.display = "none";
+                        setTimeout(function () {
+                            closeErrorPopup();
+                        }, 0);
+                    }
+                    if (document.activeElement === document.getElementById("popupInput")) {
+                        closePopup();
+                    }
+                    if (document.activeElement === document.getElementById("textbox2")) {
+                        combineText();
+                    }
+                    if (document.activeElement === document.getElementById("textbox1")) {
+                        document.getElementById("textbox1").rows += 1;
+                    }
+                }
+            });
+
+            textbox1.addEventListener("input", function () {
+                decreaseTextAreaSize();
+            });
+
+        </script>
+        <script type="text/javascript"
+            src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+        <script type="text/javascript">
+            function googleTranslateElementInit() {
+                new google.translate.TranslateElement({ pageLanguage: 'en' }, 'google_translate_element');
+            }
+        </script>
+    </div>
+
+    <footer>
+        <div id="google_translate_element"></div>
+        <button onclick="window.open('https://github.com/Hamster45105/SendFromDuck/wiki', '_blank')"
+            style="border-radius: 55px; background-color: #ff4d4d;">HELP!</button>
+        <div style="margin-top: 10px;">
+            <a href="https://github.com/Hamster45105/SendFromDuck" target="_blank"><img
+                    src="https://img.shields.io/github/stars/Hamster45105/SendFromDuck?style=social" alt="GitHub"></a>
+            <p>Made with 💖 by <a href="https://github.com/Hamster45105" target='_blank'>Hamster45105</a></p>
+</body>
+
+</html>
+</body>
+
+</html>

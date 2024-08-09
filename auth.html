@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Send From Duck | API Key Check</title>
+    <link rel="stylesheet" href="./styles/auth_style.css" />
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>API Key Check</h1>
+      <p id="message"></p>
+      <div id="buttons"></div>
+    </div>
+    <footer style="display: flex; justify-content: center; align-items: center; width: 100%; position: fixed; bottom: 0;">
+      <div id="google_translate_element"></div>
+    </footer>
+    <script>
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement(
+          { pageLanguage: "en" },
+          "google_translate_element"
+        );
+      }
+    </script>
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const key = urlParams.get("key");
+      const apiKey = localStorage.getItem("apiKey");
+      const messageElement = document.getElementById("message");
+      const buttonsElement = document.getElementById("buttons");
+
+      function redirect(imported) {
+        window.location.href = imported === 'true' ? "./index.html?imported=true" : "./";
+      }
+
+      function createButton(text, color, margin, clickHandler) {
+        const button = document.createElement("button");
+        button.style.backgroundColor = color;
+        button.textContent = text;
+        button.addEventListener("click", clickHandler);
+
+        button.style.display = 'block';
+        button.style.margin = '10px auto';
+
+        return button;
+      }
+
+      async function validateAndRedirect() {
+        const validateResult = await checkEmailAddresses(key);
+        if (validateResult === null) {
+          messageElement.textContent = "Invalid API key Given";
+          document.body.appendChild(createButton("Go home", "", "", () => redirect()));
+        } else {
+          localStorage.setItem("loginAddress", validateResult.address);
+          localStorage.setItem("loginAddressKey", key);
+          localStorage.setItem("apiKey", key);
+          redirect(urlParams.get('imported'));
+        }
+      }
+
+      async function checkEmailAddresses(apiKey) {
+          const url = "/api/generate_address";
+          const requestInit = {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ apiKey: apiKey })
+          };
+          const response = await fetch(url, requestInit);
+          return response.status === 401 ? null : await response.json();
+      }
+
+      if (apiKey === key) {
+        redirect(urlParams.get('imported'));
+      } else if (!key) {
+        messageElement.textContent = "No API key given";
+      } else {
+        messageElement.textContent = apiKey ? "Do you want to overwrite your previous API key?" : "Invalid API key Given";
+        if (apiKey) {
+          buttonsElement.appendChild(createButton("Yes", "green", "marginRight", () => {
+            buttonsElement.remove();
+            messageElement.textContent = "Loading...";
+            validateAndRedirect();
+          }));
+          buttonsElement.appendChild(createButton("No", "red", "marginLeft", () => redirect()));
+        } else {
+          validateAndRedirect();
+        }
+      }
+    </script>
+  </body>
+</html>
