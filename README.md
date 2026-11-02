@@ -1,5 +1,8 @@
 # Send From Duck
 
+> [!CAUTION]
+> This project is mostly vibe-coded. Use at your own risk.
+
 [![Reported Bugs](https://img.shields.io/github/issues/Hamster45105/SendFromDuck/bug?label=Reported%20Bugs&style=flat&color=cc4453)](https://github.com/Hamster45105/SendFromDuck/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 [![Current License](https://img.shields.io/github/license/Hamster45105/SendFromDuck?label=License&style=flat)](https://github.com/Hamster45105/SendFromDuck/blob/main/LICENSE)
 [![Website Status](https://img.shields.io/website?url=https%3A%2F%2Fsendfromduck.vercel.app%2F&up_message=online&down_message=offline)]()
